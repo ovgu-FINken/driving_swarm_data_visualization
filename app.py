@@ -94,13 +94,20 @@ for n in df_time.n.unique():
     for mode in df_time["mode"].unique():
         group_labels = [a for a in df_time.algorithm_variant.unique()]
         groups = [df_time.loc[df_time.n.eq(n) & df_time['mode'].eq(mode) & df_time.algorithm_variant.eq(algorithm_variant), 'ttg'] for algorithm_variant in group_labels]
-        fig = ff.create_distplot(groups, group_labels)
-        #fig = px.histogram(df_time.loc[df_time.n.eq(n) & df_time['mode'].eq(mode)], x="ttg", color="algorithm_variant", marginal="box", nbins=500)
+        groups = [group for group in groups if len(group) > 0]
+        #fig = ff.create_distplot(groups, group_labels)
+        fig = px.histogram(df_time.loc[df_time.n.eq(n) & df_time['mode'].eq(mode)], x="ttg", color="algorithm_variant", marginal="box", nbins=500)
+        st.write(f"TTG: n={n}, mode: {mode}")
         st.plotly_chart(fig)
 
 ## HGT
 def hgt_column(data, reference="global_planner:"):
+    
     def man_whitney_u(group):
+        if not len(group):
+            return np.nan
+        if not len(data.loc[data.algorithm_variant.eq(reference), "ttg"]):
+            return np.nan
         p = stats.mannwhitneyu(group, data.loc[data.algorithm_variant.eq(reference), "ttg"])[1]
         return p
     
@@ -115,6 +122,7 @@ def hgt_column(data, reference="global_planner:"):
 def hgt(data):
     return data.groupby(["mode", "n"]).apply(hgt_column).reset_index()
 
+st.title("HGT")
 st.dataframe(hgt(df_time))
 
 st.markdown('''
